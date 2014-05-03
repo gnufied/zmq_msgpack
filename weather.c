@@ -3,6 +3,7 @@
 
 #include "zhelpers.h"
 #include "msgpack.h"
+#include <unistd.h>
 
 int main (void)
 {
@@ -13,12 +14,14 @@ int main (void)
   assert (rc == 0);
   rc = zmq_bind (publisher, "ipc://weather.ipc");
   assert (rc == 0);
-  msgpack_sbuffer* buffer = msgpack_sbuffer_new();
-  msgpack_packer* pk = msgpack_packer_new(buffer, msgpack_sbuffer_write);
+  msgpack_sbuffer* buffer;
+  msgpack_packer* pk;
 
   //  Initialize random number generator
   srandom ((unsigned) time (NULL));
   while (1) {
+    buffer = msgpack_sbuffer_new();
+    pk = msgpack_packer_new(buffer, msgpack_sbuffer_write);
     //  Get values that will fool the boss
     int zipcode, temperature, relhumidity;
     zipcode     = randof (100000);
@@ -30,7 +33,11 @@ int main (void)
     sprintf (update, "%05d %d %d", zipcode, temperature, relhumidity);
     msgpack_pack_raw(pk, 20);
     msgpack_pack_raw_body(pk, update, 20);
+    printf ("zip code is %d, temp %d, relhumidity %d\n", zipcode, temperature, relhumidity);
     zmq_send(publisher, buffer->data, buffer->size, 0);
+    sleep (1);
+    msgpack_packer_free(pk);
+    msgpack_sbuffer_free(buffer);
   }
   zmq_close (publisher);
   zmq_ctx_destroy (context);

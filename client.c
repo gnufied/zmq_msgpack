@@ -14,15 +14,11 @@ int main (int argc, char *argv [])
   int rc = zmq_connect (subscriber, "tcp://localhost:5556");
   assert (rc == 0);
 
-  //  Subscribe to zipcode, default is NYC, 10001
-  char *filter = (argc > 1)? argv [1]: "10001 ";
-  rc = zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE,
-                       filter, strlen (filter));
+  rc = zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, "", 0);
   assert (rc == 0);
 
   //  Process 100 updates
   int update_nbr;
-  long total_temp = 0;
   for (update_nbr = 0; update_nbr < 100; update_nbr++) {
     zmq_msg_t msg;
     rc = zmq_msg_init (&msg);
@@ -30,6 +26,7 @@ int main (int argc, char *argv [])
     /* Block until a message is available to be received from socket */
     rc = zmq_msg_recv (&msg, subscriber, 0);
     assert (rc != -1);
+    printf ("Received something here\n");
     msgpack_unpacked unpacked_msg;
     msgpack_unpacked_init(&unpacked_msg);
     bool success = msgpack_unpack_next(&unpacked_msg, zmq_msg_data(&msg), zmq_msg_size(&msg), NULL);
@@ -40,12 +37,9 @@ int main (int argc, char *argv [])
     int zipcode, temperature, relhumidity;
     sscanf (string, "%d %d %d",
             &zipcode, &temperature, &relhumidity);
-    total_temp += temperature;
+    printf ("zip code is %d, temp %d, relhumidity %d\n", zipcode, temperature, relhumidity);
     zmq_msg_close(&msg);
   }
-  printf ("Average temperature for zipcode '%s' was %dF\n",
-          filter, (int) (total_temp / update_nbr));
-
   zmq_close (subscriber);
   zmq_ctx_destroy (context);
   return 0;
