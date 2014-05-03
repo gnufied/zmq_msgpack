@@ -38,6 +38,7 @@ int main (int argc, char *argv [])
     sscanf (string, "%d %d %d",
             &zipcode, &temperature, &relhumidity);
     printf ("zip code is %d, temp %d, relhumidity %d\n", zipcode, temperature, relhumidity);
+    msgpack_unpacked_destroy(&unpacked_msg);
     zmq_msg_close(&msg);
   }
   zmq_close (subscriber);
