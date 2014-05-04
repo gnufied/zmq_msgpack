@@ -11,7 +11,7 @@ int main (int argc, char *argv [])
   printf ("Collecting updates from weather server…\n");
   void *context = zmq_ctx_new ();
   void *subscriber = zmq_socket (context, ZMQ_SUB);
-  int rc = zmq_connect (subscriber, "tcp://localhost:5556");
+  int rc = zmq_connect (subscriber, "tcp://localhost:5555");
   assert (rc == 0);
 
   rc = zmq_setsockopt (subscriber, ZMQ_SUBSCRIBE, "", 0);
@@ -26,20 +26,23 @@ int main (int argc, char *argv [])
     /* Block until a message is available to be received from socket */
     rc = zmq_msg_recv (&msg, subscriber, 0);
     assert (rc != -1);
-    printf ("Received something here\n");
     msgpack_unpacked unpacked_msg;
     msgpack_unpacked_init(&unpacked_msg);
-    bool success = msgpack_unpack_next(&unpacked_msg, zmq_msg_data(&msg), zmq_msg_size(&msg), NULL);
+    void *message_copy = malloc(zmq_msg_size(&msg));
+    memcpy(message_copy, zmq_msg_data(&msg), zmq_msg_size(&msg));
+    bool success = msgpack_unpack_next(&unpacked_msg, (const char *)message_copy, zmq_msg_size(&msg), NULL);
 
     assert(success);
     const char *string = unpacked_msg.data.via.raw.ptr;
+    printf("%s\n", string);
 
-    int zipcode, temperature, relhumidity;
-    sscanf (string, "%d %d %d",
-            &zipcode, &temperature, &relhumidity);
-    printf ("zip code is %d, temp %d, relhumidity %d\n", zipcode, temperature, relhumidity);
+    /* int zipcode, temperature, relhumidity; */
+    /* sscanf (string, "%d %d %d", */
+    /*         &zipcode, &temperature, &relhumidity); */
+    /* printf ("zip code is %d, temp %d, relhumidity %d\n", zipcode, temperature, relhumidity); */
     msgpack_unpacked_destroy(&unpacked_msg);
     zmq_msg_close(&msg);
+    free(message_copy);
   }
   zmq_close (subscriber);
   zmq_ctx_destroy (context);

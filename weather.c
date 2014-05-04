@@ -30,7 +30,7 @@ int main (void)
 
     //  Send message to all subscribers
     char update [20];
-    sprintf (update, "%05d %d %d", zipcode, temperature, relhumidity);
+    sprintf (update, "%d %d %d", zipcode, temperature, relhumidity);
     msgpack_pack_raw(pk, 20);
     msgpack_pack_raw_body(pk, update, 20);
     printf ("zip code is %d, temp %d, relhumidity %d\n", zipcode, temperature, relhumidity);
